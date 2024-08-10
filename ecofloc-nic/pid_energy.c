@@ -54,9 +54,9 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         }
 
         // Construct and run the command to gather network usage
-        sprintf(command, "timeout %d nethogs %s -t -P %d -v 0 -d 1 | awk '/%d/ {print $(NF-1), $NF}'", 
+        sprintf(command, "timeout %d nethogs %s -t -P %d -v 0 -d 1 -a | awk '/%d/ {print $(NF-1), $NF}'", 
         interval_ms / 1000, features.iface, pid, pid);
-
+        printf("AQUI\n");
         //printf("command->%s\n",command);
         FILE *fp = popen(command, "r");
         if (fp == NULL)
@@ -64,10 +64,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
             perror("Failed to run Nethogs");
             break;
         }
+        printf("AQUI_2\n");
 
         while (fgets(output, sizeof(output) - 1, fp) != NULL)
         {
-            //printf("output->%s\n",output);
+            printf("output->%s\n",output);
             double upload_rate, download_rate;
             if (sscanf(output, "%lf %lf", &upload_rate, &download_rate) != 2)
             {
@@ -97,10 +98,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
 
             total_energy += interval_energy; // Total energy in joules
         }
-
+        printf("AQUI_2_5\n");
         pclose(fp);
-
+        printf("AQUI_2_6\n");
         current_time = time(NULL);
+        printf("AQUI_3\n");
     }
     return total_energy; // Return total energy in joules
 }

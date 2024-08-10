@@ -4,7 +4,7 @@ GUI_DIR=/opt/ecofloc/gui/
 BIN_DIR=/usr/local/bin
 REQUIREMENTS=python_libs.conf
 
-all: clean uninstall cpu gpu ram floc install
+all: clean uninstall cpu gpu ram sd nic floc install
 
 create_ecofloc_folder: 
 	mkdir -p $(FLOC_DIR)
@@ -31,12 +31,12 @@ clean_gpu:
 
 ######## SD ##########
 
-#sd:
-#	$(MAKE) -C ecofloc-sd
-#install_sd:
-#	cp ecofloc-sd/ecofloc-sd.out ecofloc-sd/sd_features.conf ecofloc-sd/sd_settings.conf $(FLOC_DIR)
-#clean_sd:
-#	$(MAKE) -C ecofloc-sd clean
+sd:
+	$(MAKE) -C ecofloc-sd
+install_sd:
+	cp ecofloc-sd/ecofloc-sd.out ecofloc-sd/sd_features.conf ecofloc-sd/sd_settings.conf $(FLOC_DIR)
+clean_sd:
+	$(MAKE) -C ecofloc-sd clean
 	
 ######## RAM ##########
 
@@ -49,12 +49,12 @@ clean_ram:
 
 ######## NIC ##########
 
-#nic:
-#	$(MAKE) -C ecofloc-nic
-#install_nic:
-#	cp ecofloc-nic/ecofloc-nic.out ecofloc-nic/nic_features.conf ecofloc-nic/nic_settings.conf $(FLOC_DIR)
-#clean_nic:
-#	$(MAKE) -C ecofloc-nic clean
+nic:
+	$(MAKE) -C ecofloc-nic
+install_nic:
+	cp ecofloc-nic/ecofloc-nic.out ecofloc-nic/nic_features.conf ecofloc-nic/nic_settings.conf $(FLOC_DIR)
+clean_nic:
+	$(MAKE) -C ecofloc-nic clean
 
 ######## FLOC ##########
 
@@ -92,10 +92,12 @@ clean:
 	$(MAKE) -C ecofloc-cpu clean
 	$(MAKE) -C ecofloc-gpu clean
 	$(MAKE) -C ecofloc-ram clean
+	$(MAKE) -C ecofloc-sd clean
+	$(MAKE) -C ecofloc-nic clean
 	rm -f ecofloc
 
-install: create_ecofloc_folder install_cpu install_gpu install_ram install_floc
-	chmod +x $(FLOC_DIR)ecofloc-cpu.out $(FLOC_DIR)ecofloc-gpu.out $(FLOC_DIR)ecofloc-ram.out $(FLOC_DIR)ecofloc
+install: create_ecofloc_folder install_cpu install_gpu install_ram install_sd install_nic install_floc
+	chmod +x $(FLOC_DIR)ecofloc-cpu.out $(FLOC_DIR)ecofloc-gpu.out $(FLOC_DIR)ecofloc-ram.out $(FLOC_DIR)ecofloc-sd.out $(FLOC_DIR)ecofloc-nic.out $(FLOC_DIR)ecofloc
 	chmod +x $(BIN_DIR)/ecofloc
 uninstall:
 	rm -rf $(FLOC_DIR)
