@@ -140,7 +140,7 @@ void map_voltages(cpu_map* map)
     for (int i = 0; i < map->TOTAL_VCORES; i++)
     {
         
-        sprintf(command, "sudo rdmsr -p%d 0x198 -u --bitfield 47:32", i);
+        sprintf(command, "rdmsr -p%d 0x198 -u --bitfield 47:32", i);
 
         fp = popen(command, "r");
         if (fp == NULL)
@@ -154,7 +154,8 @@ void map_voltages(cpu_map* map)
             map->VCORE_VOLT[i] = atof(voltage_buffer) / 8192.0;  // Adjust voltage according to rdmsr scaling
         else
             map->VCORE_VOLT[i] = -1.0;  // Use -1.0 to indicate an error in parsing the voltage
-
+        
+        //printf("Volt: %f\n", atof(voltage_buffer));
 
         pclose(fp);
     }

@@ -89,7 +89,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         
         // Construct the command to run perf
         //printf("pid: %d\n", pid);
-        sprintf(command, "perf stat -e mem-stores,mem-loads -p %d --timeout=%d", pid, interval_ms);
+        sprintf(command, "perf stat -e mem-stores,mem-loads -p %d --timeout=%d 2>&1", pid, interval_ms);
 
         // Trigger perf
         FILE *fp = popen(command, "r");
