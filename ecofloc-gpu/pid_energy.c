@@ -74,6 +74,7 @@ int gpu_usage(int pid)
 volatile sig_atomic_t keep_running = 1; 
 void handle_sigint(int sig) 
 {
+    printf("Finish\n");
     keep_running = 0;
 }
 double pid_energy(int pid, int interval_ms, int timeout_s)
@@ -90,6 +91,8 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
     unsigned long long start_time = time(NULL);
 
     signal(SIGINT, handle_sigint);
+    signal(SIGKILL, handle_sigint);
+    signal(SIGTERM, handle_sigint);
 
     while (keep_running && (time(NULL) - start_time) < timeout_s)
     {
