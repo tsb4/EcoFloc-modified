@@ -43,6 +43,29 @@ void handle_sigint(int sig)
 {
     keep_running = 0;
 }
+int is_data_available(FILE *file) {
+    int fd = fileno(file);  // Get the file descriptor from the FILE * stream
+    if (fd == -1) {
+        perror("fileno");
+        return 0;
+    }
+
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    // Set timeout to 0 to make it non-blocking
+    struct timeval timeout = {0, 0};
+
+    int result = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+
+    if (result == -1) {
+        perror("select");
+        return 0;
+    }
+
+    return FD_ISSET(fd, &read_fds);
+}
 
 double pid_energy(int pid, int interval_ms, int timeout_s)
 {
@@ -54,11 +77,19 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
     double interval_s = interval_ms / 1000.0;
     double total_energy = 0.0;
 
-    while (keep_running && (time(NULL) - start_time) < timeout_s)
+    while (keep_running)
     {
+        char buffer[128];
+        FILE *file = stdin;
+        if ( is_data_available(file)) {
+            fgets(buffer, sizeof(buffer), stdin);
+            printf("Received from Python: %s", buffer);
+            break;
+        }
+        
         // Construct the command to run perf
         //printf("pid: %d\n", pid);
-        sprintf(command, "perf stat -e mem-stores,mem-loads -p %d --timeout=%d 2>&1", pid, interval_ms);
+        sprintf(command, "perf stat -e mem-stores,mem-loads -p %d --timeout=%d", pid, interval_ms);
 
         // Trigger perf
         FILE *fp = popen(command, "r");
@@ -79,12 +110,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         int case_type = 0;
 
         signal(SIGINT, handle_sigint);
-        //printf("Output: %s\n", output);
         //printf("%d %d\n", pid, interval_ms);
         // If there is a new line in the file
         while (fgets(output, sizeof(output) - 1, fp) != NULL)
         {
-            //printf("Output1: %s\n", output);
+            printf("Output1: %s\n", output);
             // Truncates the string if "(" is present
             char *percent_ptr = strchr(output, '(');
             if (percent_ptr != NULL)
@@ -133,15 +163,23 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         }
 
         pclose(fp);
-        //printf("case %d\n", case_type);
+        printf("case %d\n", case_type);
         // Calculate RAM active energy consumption
+        double total_stores = 0.0;
+        double total_loads = 0.0;
         double ram_act = 0.0;
-        if (case_type == 1)
+        if (case_type == 1){
             ram_act = (mem_loads * 6.6) + (mem_stores * 8.7);
-        else if (case_type == 2)
+            total_stores += mem_stores;
+            total_loads += mem_loads;
+        }
+        else if (case_type == 2){
             ram_act = (cpu_core_mem_stores * 8.7) + (cpu_core_mem_loads * 6.6);
-        if(ram_act>0.0){
-            printf("TAM_ACT: %f %f %f\n", ram_act, cpu_core_mem_loads, cpu_core_mem_stores);
+            total_stores += cpu_core_mem_stores;
+            total_loads += cpu_core_mem_loads;
+        
+        }if(ram_act>0.0){
+            printf("TAM_ACT: %f %f %f\n", ram_act, total_loads, total_stores);
         }
         
         // Total RAM power

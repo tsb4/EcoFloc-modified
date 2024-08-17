@@ -30,7 +30,29 @@ void handle_sigint(int sig)
 {
     keep_running = 0;
 }
+int is_data_available(FILE *file) {
+    int fd = fileno(file);  // Get the file descriptor from the FILE * stream
+    if (fd == -1) {
+        perror("fileno");
+        return 0;
+    }
 
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    // Set timeout to 0 to make it non-blocking
+    struct timeval timeout = {0, 0};
+
+    int result = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+
+    if (result == -1) {
+        perror("select");
+        return 0;
+    }
+
+    return FD_ISSET(fd, &read_fds);
+}
 double pid_energy(int pid, int interval_ms, int timeout_s)
 {
     time_t start_time, current_time;
@@ -44,8 +66,15 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
 
    
 
-    while (keep_running && (time(NULL) - start_time) < timeout_s)
+    while (keep_running )
     {
+        char buffer[128];
+        FILE *file = stdin;
+        if ( is_data_available(file)) {
+            fgets(buffer, sizeof(buffer), stdin);
+            printf("Received from Python: %s", buffer);
+            break;
+        }
         // Check if the process still exists
         if (kill(pid, 0) == -1)
         {

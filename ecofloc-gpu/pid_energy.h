@@ -27,6 +27,9 @@ under the License.
 #include <time.h>   // For nanosleep
 #include <limits.h>
 #include <signal.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <errno.h>
 #include "gpu.h"
 
 

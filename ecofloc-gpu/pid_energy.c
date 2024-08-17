@@ -74,12 +74,38 @@ int gpu_usage(int pid)
 volatile sig_atomic_t keep_running = 1; 
 void handle_sigint(int sig) 
 {
-    printf("Finish\n");
+    printf("Finish interrupt\n");
     keep_running = 0;
 }
+
+int is_data_available(FILE *file) {
+    int fd = fileno(file);  // Get the file descriptor from the FILE * stream
+    if (fd == -1) {
+        perror("fileno");
+        return 0;
+    }
+
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    // Set timeout to 0 to make it non-blocking
+    struct timeval timeout = {0, 0};
+
+    int result = select(fd + 1, &read_fds, NULL, NULL, &timeout);
+
+    if (result == -1) {
+        perror("select");
+        return 0;
+    }
+
+    return FD_ISSET(fd, &read_fds);
+}
+
+
 double pid_energy(int pid, int interval_ms, int timeout_s)
 {
-    //printf("AQUI\n");
+    printf("AQUI start\n");
     double total_energy = 0.0;
     double interval_s = interval_ms / 1000.0; // Convert ms to seconds
 
@@ -94,8 +120,15 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
     signal(SIGKILL, handle_sigint);
     signal(SIGTERM, handle_sigint);
 
-    while (keep_running && (time(NULL) - start_time) < timeout_s)
+    while (keep_running)
     {
+        char buffer[128];
+        FILE *file = stdin;
+        if ( is_data_available(file)) {
+            fgets(buffer, sizeof(buffer), stdin);
+            printf("Received from Python: %s", buffer);
+            break;
+        }
         pthread_mutex_lock(&fn_mutex); // Protect time values retrieval 
         float initial_power = gpu_power();
         int initial_usage = gpu_usage(pid);
@@ -118,9 +151,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         double interval_energy = avg_interval_power * interval_s;
 
         // Write results
+        printf("Update %lld \n",  time(NULL) - start_time);
         write_results(pid, time(NULL) - start_time, avg_interval_power, interval_energy);
 
         total_energy += interval_energy;
+        signal(SIGINT, handle_sigint);
     }
 
     return total_energy; // Total energy in Joules
