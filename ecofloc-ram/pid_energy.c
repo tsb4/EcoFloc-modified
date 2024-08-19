@@ -77,6 +77,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
     double interval_s = interval_ms / 1000.0;
     double total_energy = 0.0;
 
+    double final_mem_loads = 0.0;
+    double final_mem_dram_loads = 0.0;
+    double final_mem_stores = 0.0;
+
+
     while (keep_running)
     {
         char buffer[128];
@@ -89,7 +94,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         
         // Construct the command to run perf
         //printf("pid: %d\n", pid);
-        sprintf(command, "perf stat -e mem-stores,mem-loads -p %d --timeout=%d 2>&1", pid, interval_ms);
+        sprintf(command, "perf stat -e mem-stores,mem-loads,L1-dcache-loads,L1-dcache-stores,mem_load_l3_miss_retired.local_dram,mem_load_l3_miss_retired.remote_dram -p %d --timeout=%d 2>&1", pid, interval_ms);
 
         // Trigger perf
         FILE *fp = popen(command, "r");
@@ -143,7 +148,8 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
                     sscanf(clean_output, "%lf", &cpu_core_mem_loads);
                 }
             }
-            else if (strstr(output, "mem-stores") != NULL || strstr(output, "mem-loads") != NULL)
+            else if (strstr(output, "mem-stores") != NULL || strstr(output, "mem-loads") != NULL || strstr(output, "L1-dcache-loads") != NULL
+                     || strstr(output, "mem_load_l3_miss_retired.local_dram") != NULL || strstr(output, "mem_load_l3_miss_retired.remote_dram") != NULL)
             {
                 if (case_type != 2)
                 {
@@ -152,11 +158,30 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
                     {
                         strip_non_digit(output, clean_output);
                         sscanf(clean_output, "%lf", &mem_stores);
+                        final_mem_stores += mem_stores;
                     }
-                    else if (strstr(output, "mem-loads") != NULL)
+                    //else if (strstr(output, "mem-loads") != NULL)
+                    //{
+                    //    strip_non_digit(output, clean_output);
+                    //    sscanf(clean_output, "%lf", &mem_loads);
+                    //}
+                    else if (strstr(output, "L1-dcache-loads") != NULL)
                     {
                         strip_non_digit(output, clean_output);
                         sscanf(clean_output, "%lf", &mem_loads);
+                        final_mem_loads += mem_loads;
+                        mem_loads = 0.0;
+                    }
+                    else if (strstr(output, "mem_load_l3_miss_retired.local_dram") != NULL)
+                    {
+                        strip_non_digit(output, clean_output);
+                        sscanf(clean_output, "%lf", &mem_loads);
+                        final_mem_dram_loads += mem_loads;
+                    }else if (strstr(output, "mem_load_l3_miss_retired.remote_dram") != NULL)
+                    {
+                        strip_non_digit(output, clean_output);
+                        sscanf(clean_output, "%lf", &mem_loads);
+                        final_mem_dram_loads += mem_loads;
                     }
                 }
             }
@@ -172,6 +197,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
             ram_act = (mem_loads * 6.6) + (mem_stores * 8.7);
             total_stores += mem_stores;
             total_loads += mem_loads;
+            
         }
         else if (case_type == 2){
             ram_act = (cpu_core_mem_stores * 8.7) + (cpu_core_mem_loads * 6.6);
@@ -197,6 +223,20 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         // struct timespec interval = {0, interval_ms * 1000000};
         // nanosleep(&interval, NULL);
     }
+    // Open CSV file for appending
+    FILE* file = fopen("/home/tiago/Documents/stabilityAI/mem_ops.csv", "a");
+    if (file == NULL) {
+        perror("fopen");
+        return EXIT_FAILURE;
+    }
+
+    // Write data to CSV file
+    fprintf(file, "%d,%f,%f,%f\n", pid, final_mem_loads, final_mem_stores, final_mem_dram_loads);
+
+    // Close file
+    fclose(file);
+
+    //printf("Data added to %s\n", csv_file);
 
     return total_energy; // Total energy in Joules
 }
