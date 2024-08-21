@@ -105,7 +105,7 @@ int is_data_available(FILE *file) {
 
 double pid_energy(int pid, int interval_ms, int timeout_s)
 {
-    printf("AQUI start\n");
+    //printf("AQUI start\n");
     double total_energy = 0.0;
     double interval_s = interval_ms / 1000.0; // Convert ms to seconds
 
@@ -151,7 +151,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         double interval_energy = avg_interval_power * interval_s;
 
         // Write results
-        printf("Update %lld \n",  time(NULL) - start_time);
+        //printf("Update %lld \n",  time(NULL) - start_time);
         write_results(pid, time(NULL) - start_time, avg_interval_power, interval_energy);
 
         total_energy += interval_energy;

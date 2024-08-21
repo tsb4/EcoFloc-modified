@@ -119,7 +119,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         // If there is a new line in the file
         while (fgets(output, sizeof(output) - 1, fp) != NULL)
         {
-            printf("Output1: %s\n", output);
+            //printf("Output1: %s\n", output);
             // Truncates the string if "(" is present
             char *percent_ptr = strchr(output, '(');
             if (percent_ptr != NULL)
@@ -188,7 +188,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         }
 
         pclose(fp);
-        printf("case %d\n", case_type);
+        //printf("case %d\n", case_type);
         // Calculate RAM active energy consumption
         double total_stores = 0.0;
         double total_loads = 0.0;
@@ -205,7 +205,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
             total_loads += cpu_core_mem_loads;
         
         }if(ram_act>0.0){
-            printf("TAM_ACT: %f %f %f\n", ram_act, total_loads, total_stores);
+            //printf("TAM_ACT: %f %f %f\n", ram_act, total_loads, total_stores);
         }
         
         // Total RAM power
@@ -224,7 +224,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         // nanosleep(&interval, NULL);
     }
     // Open CSV file for appending
-    FILE* file = fopen("/home/tiago/Documents/stabilityAI/mem_ops.csv", "a");
+    FILE* file = fopen("/home/tiago/Documents/huggingFaceAnalaysis/energyConsumption/mem_ops.csv", "a");
     if (file == NULL) {
         perror("fopen");
         return EXIT_FAILURE;
