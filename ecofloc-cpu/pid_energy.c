@@ -37,7 +37,7 @@ double get_capacitance()
 {
     char buf[1024];
     double cpu_freq_tdp; // In MHz
-    double cpu_tdp = 20.0; //FROM DATASHEET
+    double cpu_tdp = 150; //FROM DATASHEET
     double cpu_voltage_tdp = 1.5; //FROM DATASHEET
     double cpu_capacitance;
     
@@ -71,6 +71,7 @@ double get_capacitance()
     }
     //printf("Freq: %f\n", cpu_freq_tdp);
     cpu_capacitance = (0.7 * cpu_tdp) / (cpu_freq_tdp * cpu_voltage_tdp * cpu_voltage_tdp);
+    cpu_capacitance = (cpu_tdp) / (0.7*cpu_freq_tdp * cpu_voltage_tdp * cpu_voltage_tdp);
     //printf("CAPACITANCE %f\n", cpu_capacitance);
 
     return cpu_capacitance;

@@ -67,6 +67,57 @@ int is_data_available(FILE *file) {
     return FD_ISSET(fd, &read_fds);
 }
 
+float get_ram_utilization(int pid, float interval_ms){
+   char command[256];
+    snprintf(command, sizeof(command), "timeout %0.3fs ps -p %d -o %%mem= | awk '{ sum += $1 } END { print sum }'", interval_ms / 1000.0, pid);
+
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("popen");
+        return -1.0;
+    }
+
+    char output[128];
+    if (fgets(output, sizeof(output), fp) == NULL) {
+        perror("fgets");
+        pclose(fp);
+        return -1.0;
+    }
+
+    pclose(fp);
+    //printf("%s\n", output);
+
+    return atof(output)/100;
+}
+float get_energy_usage(float interval_ms) {
+    char command[1024];
+    snprintf(command, sizeof(command), "perf stat -e power/energy-ram/ --timeout=%.0f 2>&1", interval_ms);
+
+    FILE *fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("popen");
+        return -1.0;
+    }
+
+    char buffer[1024];
+    char clean_buffer[1024];
+    float energy = -1.0;
+    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        // Look for the line containing the energy value
+        //printf("output %s\n", buffer);
+        if (strstr(buffer, "power/energy-ram/")) {
+            // Extract the energy value
+            strip_non_digit(buffer, clean_buffer);
+            sscanf(clean_buffer, "%f", &energy);
+            return energy;
+            
+        }
+    }
+
+    pclose(fp);
+    return energy;
+}
+
 double pid_energy(int pid, int interval_ms, int timeout_s)
 {
     time_t start_time = time(NULL);
@@ -91,6 +142,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
             printf("Received from Python: %s", buffer);
             break;
         }
+
+        float mem_usage = get_ram_utilization(pid, interval_ms);
+        //printf("mem usage: %f\n", mem_usage);
+        float mem_energy = get_energy_usage(interval_ms);
+        //printf("mem energy: %f\n", mem_energy);
         
         // Construct the command to run perf
         //printf("pid: %d\n", pid);
@@ -214,6 +270,11 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
             interval_energy = ram_act / 1000000000; // Convert from nanoJoules to Joules
             avg_interval_power = interval_energy / interval_s; // Average interval power
         }
+
+        //printf("old: %f New: %f \n", interval_energy, mem_usage*mem_energy);
+
+        interval_energy = mem_usage*mem_energy;
+        avg_interval_power = interval_energy/interval_s;
 
         // Write results
         write_results(pid, time(NULL) - start_time, avg_interval_power, interval_energy);
