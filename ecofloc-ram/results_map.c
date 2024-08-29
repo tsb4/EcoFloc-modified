@@ -109,7 +109,7 @@ void initialize_results_object(void *identifier, int is_pid)
     pthread_mutex_unlock(&pid_mutex);
 }
 
-void write_results(int pid, int time, double power, double energy)
+void write_results(int pid, int time, double power, double energy, int timestamp)
 {
     pthread_mutex_lock(&pid_mutex);
 
@@ -136,11 +136,10 @@ void write_results(int pid, int time, double power, double energy)
 
     if (export_to_csv==1) 
     {
-        fprintf(export_file, "%d,%.2f,%.2f\n", pid, power, energy);
+        fprintf(export_file, "%d,%d,%.2f,%.2f\n", pid,timestamp, power, energy);
     }    
     pthread_mutex_unlock(&pid_mutex);
 }
-
 
 
 void print_results()

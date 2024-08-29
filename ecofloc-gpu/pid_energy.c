@@ -152,7 +152,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
 
         // Write results
         //printf("Update %lld \n",  time(NULL) - start_time);
-        write_results(pid, time(NULL) - start_time, avg_interval_power, interval_energy);
+        write_results(pid, time(NULL) - start_time, avg_interval_power, interval_energy,time(NULL));
 
         total_energy += interval_energy;
         signal(SIGINT, handle_sigint);

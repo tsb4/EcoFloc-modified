@@ -243,7 +243,7 @@ double pid_energy(int pid, int interval_ms, int timeout_s)
         pthread_mutex_unlock(&fn_mutex);
 
         
-        write_results(pid, time(NULL) - start_time, avg_interval_power,interval_energy);
+        write_results(pid, time(NULL) - start_time, avg_interval_power,interval_energy, time(NULL));
         //print_results();
 
         total_energy += interval_energy; //TODO-> cummulation in map

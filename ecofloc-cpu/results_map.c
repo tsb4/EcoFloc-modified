@@ -112,7 +112,7 @@ void initialize_results_object(void *identifier, int is_pid)
     pthread_mutex_unlock(&pid_mutex);
 }
 
-void write_results(int pid, int time, double power, double energy)
+void write_results(int pid, int time, double power, double energy, int timestamp)
 {
     pthread_mutex_lock(&pid_mutex);
 
@@ -130,7 +130,6 @@ void write_results(int pid, int time, double power, double energy)
     */  
     if(global_results->elapsed_time<time)
         global_results->elapsed_time = time;
-    
     //data->count++;  // In case of tracking the accesses number number
 
     if (global_results->elapsed_time > 0) 
@@ -138,9 +137,9 @@ void write_results(int pid, int time, double power, double energy)
         global_results->average_power = global_results->total_energy / global_results->elapsed_time;
     }
 
-    if (export_to_csv) 
+    if (export_to_csv==1) 
     {
-        fprintf(export_file, "%d,%.2f,%.2f\n", pid, power, energy);
+        fprintf(export_file, "%d,%d,%.2f,%.2f\n", pid,timestamp, power, energy);
     }    
     pthread_mutex_unlock(&pid_mutex);
 }
